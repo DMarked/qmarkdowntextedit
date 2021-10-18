@@ -1,5 +1,6 @@
 TEMPLATE = subdirs
-SUBDIRS = app lib
-app.file = qmarkdowntextedit-app.pro
+CONFIG += staticlib
+SUBDIRS = lib
+CONFIG += staticlib
+
 lib.file = qmarkdowntextedit-lib.pro
-app.depends = lib
