@@ -240,7 +240,7 @@ void MarkdownHighlighter::initHighlightingRules() {
     {
         HighlightingRule rule(HighlighterState::TrailingSpace);
         rule.pattern = QRegularExpression(QStringLiteral("( +)$"));
-        // waqar144: dont use QStringLiteral here.
+        // waqar144: don't use QStringLiteral here.
         rule.shouldContain = QString(" \0");
         rule.capturingGroup = 1;
         _highlightingRules.append(rule);
@@ -2296,6 +2296,8 @@ void MarkdownHighlighter::highlightEmAndStrong(const QString &text,
                                    startDelim.marker == QLatin1Char('_');
             while (k != (startDelim.pos + boldLen)) {
                 QTextCharFormat fmt = QSyntaxHighlighter::format(k);
+                fmt.setFont(_formats[Bold].font());
+
                 // if we are in plain text, use the format's specified color
                 if (fmt.foreground() == QTextCharFormat().foreground())
                     fmt.setForeground(_formats[Bold].foreground());
@@ -2332,6 +2334,8 @@ void MarkdownHighlighter::highlightEmAndStrong(const QString &text,
             const int itLen = endDelim.pos - startDelim.pos;
             while (k != (startDelim.pos + itLen)) {
                 QTextCharFormat fmt = QSyntaxHighlighter::format(k);
+                fmt.setFont(_formats[Italic].font());
+
                 if (fmt.foreground() == QTextCharFormat().foreground())
                     fmt.setForeground(_formats[Italic].foreground());
                 if (underline)
