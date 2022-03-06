@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2014-2021 Patrizio Bekerle -- <patrizio@bekerle.com>
+ * Copyright (c) 2014-2022 Patrizio Bekerle -- <patrizio@bekerle.com>
  * Copyright (c) 2019-2021 Waqar Ahmed      -- <waqar.17a@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -581,7 +581,7 @@ void MarkdownHighlighter::highlightHeadline(const QString &text) {
     };
 
     // take care of ==== and ---- headlines
-    const QString &prev = currentBlock().previous().text();
+    const QString prev = currentBlock().previous().text();
     auto prevSpaces = getIndentation(prev);
 
     if (text.at(spacesOffset) == QLatin1Char('=') && prevSpaces < 4) {
@@ -600,7 +600,7 @@ void MarkdownHighlighter::highlightHeadline(const QString &text) {
         }
     }
 
-    const QString &nextBlockText = currentBlock().next().text();
+    const QString nextBlockText = currentBlock().next().text();
     if (nextBlockText.isEmpty()) return;
     const int nextSpaces = getIndentation(nextBlockText);
 
@@ -918,11 +918,13 @@ void MarkdownHighlighter::highlightSyntax(const QString &text) {
         // check if we are at the beginning OR if this is the start of a word
         if (i == 0 || (!text.at(i - 1).isLetterOrNumber() &&
                        text.at(i-1) != QLatin1Char('_'))) {
-            const auto wordList = data.values(text.at(i).toLatin1());
-            for (const QLatin1String &word : wordList) {
+            const char c = text.at(i).toLatin1();
+            auto it = data.find(c);
+            for (; it != data.end() && it.key() == c; ++it) {
                 // we have a word match check
                 // 1. if we are at the end
                 // 2. if we have a complete word
+                const QLatin1String &word = it.value();
                 if (word == MH_SUBSTR(i, word.size()) &&
                     (i + word.size() == text.length() ||
                      (!text.at(i + word.size()).isLetterOrNumber() &&
@@ -1031,9 +1033,10 @@ void MarkdownHighlighter::highlightSyntax(const QString &text) {
 
         /* Highlight other stuff (preprocessor etc.) */
         if (i == 0 || !text.at(i - 1).isLetter()) {
-            const QList<QLatin1String> wordList =
-                others.values(text[i].toLatin1());
-            for (const QLatin1String &word : wordList) {
+            const char c = text.at(i).toLatin1();
+            auto it = others.find(c);
+            for (; it != others.end() && it.key() == c; ++it) {
+                const QLatin1String &word = it.value();
                 if (word == MH_SUBSTR(i, word.size()) &&
                     (i + word.size() == text.length() ||
                      !text.at(i + word.size()).isLetter())) {
@@ -1923,7 +1926,7 @@ void MarkdownHighlighter::highlightAdditionalRules(
  */
 int isInLinkRange(int pos, QVector<QPair<int, int>> &range) {
     int j = 0;
-    for (const auto i : range) {
+    for (const auto &i : range) {
         if (pos >= i.first && pos <= i.second) {
             // return the length of the range so that we can skip it
             const int len = i.second - i.first;
@@ -2288,6 +2291,7 @@ void MarkdownHighlighter::highlightEmAndStrong(const QString &text,
         if (startDelim.end == -1) continue;
 
         const auto &endDelim = delims.at(startDelim.end);
+        auto state = static_cast<HighlighterState>(currentBlockState());
 
         const bool isStrong =
             i > 0 && delims.at(i - 1).end == startDelim.end + 1 &&
@@ -2308,6 +2312,9 @@ void MarkdownHighlighter::highlightEmAndStrong(const QString &text,
             while (k != (startDelim.pos + boldLen)) {
                 QTextCharFormat fmt = QSyntaxHighlighter::format(k);
                 fmt.setFont(_formats[Bold].font());
+
+                if (_formats[state].fontPointSize() > 0)
+                    fmt.setFontPointSize(_formats[state].fontPointSize());
 
                 // if we are in plain text, use the format's specified color
                 if (fmt.foreground() == QTextCharFormat().foreground())
@@ -2348,6 +2355,9 @@ void MarkdownHighlighter::highlightEmAndStrong(const QString &text,
             while (k != (startDelim.pos + itLen)) {
                 QTextCharFormat fmt = QSyntaxHighlighter::format(k);
                 fmt.setFont(_formats[Italic].font());
+
+                if (_formats[state].fontPointSize() > 0)
+                    fmt.setFontPointSize(_formats[state].fontPointSize());
 
                 if (fmt.foreground() == QTextCharFormat().foreground())
                     fmt.setForeground(_formats[Italic].foreground());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 Patrizio Bekerle -- <patrizio@bekerle.com>
+ * Copyright (c) 2014-2022 Patrizio Bekerle -- <patrizio@bekerle.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 #pragma once
 
 #include <QPlainTextEdit>
+#include <QTimer>
 #include <QWidget>
 
 namespace Ui {
@@ -34,6 +35,7 @@ class QPlainTextEditSearchWidget : public QWidget {
     ~QPlainTextEditSearchWidget();
     void setSearchText(const QString &searchText);
     void setSearchMode(SearchMode searchMode);
+    void setDebounceDelay(uint debounceDelay);
     void activate(bool focus);
     void clearSearchExtraSelections();
     void updateSearchExtraSelections();
@@ -44,7 +46,10 @@ class QPlainTextEditSearchWidget : public QWidget {
     int _currentSearchResult;
     QList<QTextEdit::ExtraSelection> _searchExtraSelections;
     QColor selectionColor;
+    QTimer _debounceTimer;
+    QString _searchTerm;
     void setSearchExtraSelections() const;
+    void stopDebounce();
 
    protected:
     QPlainTextEdit *_textEdit;
@@ -65,6 +70,7 @@ class QPlainTextEditSearchWidget : public QWidget {
 
    protected slots:
     void searchLineEditTextChanged(const QString &arg1);
+    void performSearch();
     void updateSearchCountLabelText();
     void setSearchSelectionColor(const QColor &color);
    private slots:

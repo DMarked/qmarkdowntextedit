@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 Patrizio Bekerle -- <patrizio@bekerle.com>
+ * Copyright (c) 2014-2022 Patrizio Bekerle -- <patrizio@bekerle.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -91,6 +91,12 @@ QMarkdownTextEdit::QMarkdownTextEdit(QWidget *parent, bool initHighlighter)
     });
     connect(this, &QPlainTextEdit::cursorPositionChanged, this, [this]() {
         _lineNumArea->update();
+
+        auto oldArea = blockBoundingGeometry(_textCursor.block()).translated(contentOffset());
+        _textCursor = textCursor();
+        auto newArea = blockBoundingGeometry(_textCursor.block()).translated(contentOffset());
+        auto areaToUpdate = oldArea | newArea;
+        viewport()->update(areaToUpdate.toRect());
     });
     connect(document(), &QTextDocument::blockCountChanged,
             this, &QMarkdownTextEdit::updateLineNumberAreaWidth);
@@ -109,6 +115,32 @@ void QMarkdownTextEdit::setLineNumbersCurrentLineColor(QColor color) {
 
 void QMarkdownTextEdit::setLineNumbersOtherLineColor(QColor color) {
     _lineNumArea->setOtherLineColor(std::move(color));
+}
+
+void QMarkdownTextEdit::setSearchWidgetDebounceDelay(uint debounceDelay)
+{
+    _debounceDelay = debounceDelay;
+    searchWidget()->setDebounceDelay(_debounceDelay);
+}
+
+void QMarkdownTextEdit::setHighlightCurrentLine(bool set)
+{
+    _highlightCurrentLine = set;
+}
+
+bool QMarkdownTextEdit::highlightCurrentLine()
+{
+    return _highlightCurrentLine;
+}
+
+void QMarkdownTextEdit::setCurrentLineHighlightColor(const QColor &color)
+{
+    _currentLineHighlightColor = color;
+}
+
+QColor QMarkdownTextEdit::currentLineHighlightColor()
+{
+    return _currentLineHighlightColor;
 }
 
 /**
@@ -777,7 +809,7 @@ bool QMarkdownTextEdit::quotationMarkCheck(const QChar quotationCharacter) {
     const int positionInBlock = cursor.positionInBlock();
 
     // get the current text from the block
-    const QString &text = cursor.block().text();
+    const QString text = cursor.block().text();
     const int textLength = text.length();
 
     // if last char is not space, we are at word end, no autocompletion
@@ -1231,7 +1263,7 @@ QMap<QString, QString> QMarkdownTextEdit::parseMarkdownUrlsFromText(
 
     // match reference urls like this: [this url][1] with this later:
     // [1]: http://domain
-    regex = QRegularExpression(R"(\[(.*?)\]\[(.+?)\])");
+    regex = QRegularExpression(R"((\[.*?\]\[(.+?)\]))");
     iterator = regex.globalMatch(text);
     while (iterator.hasNext()) {
         QRegularExpressionMatch match = iterator.next();
@@ -1244,7 +1276,7 @@ QMap<QString, QString> QMarkdownTextEdit::parseMarkdownUrlsFromText(
         //                        "\\]: (.+?:\\/\\/.+)");
         QRegularExpression refRegExp(QStringLiteral("\\[") +
                                      QRegularExpression::escape(referenceId) +
-                                     QStringLiteral("\\]: (.+?)"));
+                                     QStringLiteral("\\]: (.+)"));
         QRegularExpressionMatch urlMatch = refRegExp.match(toPlainText());
 
         if (urlMatch.hasMatch()) {
@@ -1731,6 +1763,17 @@ void QMarkdownTextEdit::paintEvent(QPaintEvent *e) {
             layout->setTextOption(opt);
         }
 
+        // Current line highlight
+        QTextCursor cursor = textCursor();
+        if (highlightCurrentLine() && cursor.block() == block) {
+            QTextLine line = block.layout()->lineForTextPosition(cursor.positionInBlock());
+            QRectF lineRect = line.rect();
+            lineRect.moveTop(lineRect.top() + r.top());
+            lineRect.setLeft(0.);
+            lineRect.setRight(viewportRect.width());
+            painter.fillRect(lineRect.toAlignedRect(), currentLineHighlightColor());
+        }
+
         block = block.next();
         firstVisible = false;
     }
@@ -1771,6 +1814,7 @@ void QMarkdownTextEdit::hideSearchWidget(bool reset) {
 
 void QMarkdownTextEdit::updateSettings() {
     // if true: centers the screen if cursor reaches bottom (but not top)
+    searchWidget()->setDebounceDelay(_debounceDelay);
     setCenterOnScroll(_centerCursor);
 }
 
@@ -1779,10 +1823,5 @@ void QMarkdownTextEdit::setLineNumberLeftMarginOffset(int offset) {
 }
 
 QMargins QMarkdownTextEdit::viewportMargins() {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 5, 0))
     return QPlainTextEdit::viewportMargins();
-#else
-    // This most likely will break line numbers, they aren't really supported in Qt < 5.5
-    return QMargins();
-#endif
 }

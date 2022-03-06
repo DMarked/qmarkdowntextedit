@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 Patrizio Bekerle -- <patrizio@bekerle.com>
+ * Copyright (c) 2014-2022 Patrizio Bekerle -- <patrizio@bekerle.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,6 +60,12 @@ class QMarkdownTextEdit : public QPlainTextEdit {
     void updateSettings();
     void setLineNumbersCurrentLineColor(QColor color);
     void setLineNumbersOtherLineColor(QColor color);
+    void setSearchWidgetDebounceDelay(uint debounceDelay);
+
+    void setHighlightCurrentLine(bool set);
+    bool highlightCurrentLine();
+    void setCurrentLineHighlightColor(const QColor &c);
+    QColor currentLineHighlightColor();
 
    public Q_SLOTS:
     void duplicateText();
@@ -75,6 +81,7 @@ class QMarkdownTextEdit : public QPlainTextEdit {
     void setLineNumberEnabled(bool enabled);
 
    protected:
+    QTextCursor _textCursor;
     MarkdownHighlighter *_highlighter;
     bool _highlightingEnabled;
     QStringList _ignoredClickUrlSchemata;
@@ -83,6 +90,9 @@ class QMarkdownTextEdit : public QPlainTextEdit {
     AutoTextOptions _autoTextOptions;
     bool _mouseButtonDown = false;
     bool _centerCursor = false;
+    bool _highlightCurrentLine = false;
+    QColor _currentLineHighlightColor = QColor();
+    uint _debounceDelay = 0;
 
     bool eventFilter(QObject *obj, QEvent *event);
     QMargins viewportMargins();
