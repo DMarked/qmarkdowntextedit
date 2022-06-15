@@ -905,8 +905,8 @@ void MarkdownHighlighter::highlightSyntax(const QString &text) {
             comment = QLatin1Char('#');
             break;
         default:
-            comment = QChar('\0');
-            break;
+            setFormat(0, textLen, _formats[CodeBlock]);
+            return;
     }
 
     // apply the default code block format first
@@ -2102,7 +2102,7 @@ inline bool isMDAsciiPunct(const int ch) noexcept {
 /**
  * @brief scans a chain of '*' or '_'
  * @param text: current text block
- * @param start: current position in the the text
+ * @param start: current position in the text
  * @param canSplitWord: is Underscore
  * @return length, canOpen, canClose
  * @details Helper function for Em and strong highlighting
