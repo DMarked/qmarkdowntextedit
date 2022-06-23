@@ -8,12 +8,12 @@ include(qmarkdowntextedit.pri)
 TRANSLATIONS += trans/qmarkdowntextedit_de.ts \
                 trans/qmarkdowntextedit_zh_CN.ts
 
-target.path = $$[QT_INSTALL_LIBS]
+target.path = $${LIBS_PREFIX}/lib
 
 headers.files = $$HEADERS
-headers.path = $$[QT_INSTALL_PREFIX]/include/$$TARGET/
+headers.path = $${LIBS_PREFIX}/include/$$TARGET/
 
 license.files = LICENSE
-license.path = $$[QT_INSTALL_PREFIX]/share/licenses/$$TARGET/
+license.path = $${LIBS_PREFIX}/include/$$TARGET/
 
 INSTALLS += target license headers
